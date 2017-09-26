@@ -34,12 +34,15 @@ float camLocation[] = {
 
 std::vector<float> posBuf;
 std::vector<float> norBuf;
+std::vector<float> texCoordBuf;
 std::vector<unsigned int> eleBuf;
 
 // Buffer IDs
 unsigned vaoID;
 unsigned posBufID;
 unsigned eleBufID;
+unsigned texCoordBufID;
+unsigned texBufID;
 
 // Shader program
 GLuint pid;
@@ -50,6 +53,10 @@ GLint vertPosLoc;
 // Shader uniforms
 GLint perspectiveLoc;
 GLint placementLoc;
+
+// Texture testing
+GLint texCoordLoc;
+GLint texLoc;
 
 int g_width, g_height;
 
@@ -77,7 +84,7 @@ static unsigned int getshort(FILE *fp) {
 	return ((unsigned int) c) + (((unsigned int) c1) << 8);
 }
 
-int ImageLoad(const char *filename, Image *image) {
+int imageLoad(const char *filename, Image *image) {
 	FILE *file;
 	unsigned long size; // Size of the image in bytes
 	unsigned long i; // Standard counter
@@ -269,6 +276,7 @@ static void getMesh(const std::string &meshName) {
     exit(0);
 	} else {
 		posBuf = shapes[0].mesh.positions;
+    texCoordBuf = shapes[0].mesh.texcoords;
 		eleBuf = shapes[0].mesh.indices;
 	}
 }
@@ -279,6 +287,18 @@ static void sendMesh() {
   glBindBuffer(GL_ARRAY_BUFFER, posBufID);
   glBufferData(GL_ARRAY_BUFFER, posBuf.size() * sizeof(float), &posBuf[0],
     GL_STATIC_DRAW);
+
+  // Error if texture buffer is empty
+  if(texCoordBuf.empty()) {
+    fprintf(stderr, "Could not find texture buffer.\n");
+    exit(0);
+  }
+
+  // Send texture coordinate array to GPU
+  glGenBuffers(1, &texCoordBufID);
+  glBindBuffer(GL_ARRAY_BUFFER, texCoordBufID);
+  glBufferData(GL_ARRAY_BUFFER, texCoordBuf.size() * sizeof(float),
+    &texCoordBuf[0], GL_STATIC_DRAW);
 
   // Send element array to GPU
   glGenBuffers(1, &eleBufID);
@@ -302,7 +322,6 @@ static void init() {
   glEnable(GL_BLEND);
 
   // Get mesh
-  // getMesh("../resources/bunny.obj");
   getMesh("../resources/sphere.obj");
   resizeMesh(posBuf);
 
@@ -355,6 +374,7 @@ static void init() {
 
   // Attribs
   vertPosLoc = glGetAttribLocation(pid, "vertPos");
+  texCoordLoc = glGetAttribLocation(pid, "texCoord");
 
   // Create vertex array object
   glGenVertexArrays(1, &vaoID);
@@ -366,6 +386,12 @@ static void init() {
   glVertexAttribPointer(vertPosLoc, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 3,
     (const void *) 0);
 
+  // Bind texture coordinate buffer
+  glEnableVertexAttribArray(texCoordLoc);
+  glBindBuffer(GL_ARRAY_BUFFER, texCoordBufID);
+  glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 2,
+    (const void *) 0);
+
   // Bind element buffer
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eleBufID);
 
@@ -374,6 +400,7 @@ static void init() {
 
   // Disable
   glDisableVertexAttribArray(vertPosLoc);
+  glDisableVertexAttribArray(texCoordLoc);
 
   // Unbind GPU buffers
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -382,6 +409,39 @@ static void init() {
   // Matrices to pass to vertex shaders
   perspectiveLoc = glGetUniformLocation(pid, "perspective");
   placementLoc = glGetUniformLocation(pid, "placement");
+
+  // Read texture into CPU memory
+  struct Image image;
+  imageLoad("../resources/world.bmp", &image);
+
+  // Load the texture into the GPU
+
+  // Set the first texture unit as active
+  glActiveTexture(GL_TEXTURE0);
+  // Generate texture buffer object
+  glGenTextures(1, &texBufID);
+  // Bind current texture unit to texture buffer object as a GL_TEXTURE_2D
+  glBindTexture(GL_TEXTURE_2D, texBufID);
+  // Load texture data into texBufID
+  // Base level is 0, number of channels is 3, and border is 0
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.sizeX, image.sizeY,
+    0, GL_RGB, GL_UNSIGNED_BYTE, (GLubyte *) image.data);
+
+  // Generate image pyramid
+  glGenerateMipmap(GL_TEXTURE_2D);
+  // Set texture wrap modes for S and T directions
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // Set filtering mode for magnification and minification
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+    GL_LINEAR_MIPMAP_LINEAR);
+
+  // Unbind from texture buffer object from current texture unit
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // Get the location of the sampler2D in fragment shader (???)
+  texLoc = glGetUniformLocation(pid, "tex");
 }
 
 static void render() {
@@ -425,15 +485,27 @@ static void render() {
   // Bind vertex array object
   glBindVertexArray(vaoID);
 
+  // Bind texture to texture unit 0 (can put in VAO???)
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texBufID);
+  glUniform1i(texLoc, 0);
+
   // Draw
   glDrawElements(GL_TRIANGLES, (int) eleBuf.size(), GL_UNSIGNED_INT,
     (const void *) 0);
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   // Unbind vertex array object
   glBindVertexArray(0);
 
   // Unbind shader program
   glUseProgram(0);
+
+  // Is this needed (???)
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 int main(int argc, char **argv) {
