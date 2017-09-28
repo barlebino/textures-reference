@@ -29,7 +29,7 @@ GLFWwindow *window; // Main application window
 
 // Location of camera
 float camLocation[] = {
-  0.f, 0.f, 5.f
+  0.f, 0.f, 1.f
 };
 
 std::vector<float> posBuf;
@@ -58,7 +58,27 @@ GLint placementLoc;
 GLint texCoordLoc;
 GLint texLoc;
 
+// Height of window ???
 int g_width, g_height;
+
+static const float posArr[] = {
+  1.f, 1.f, 0.f,
+  1.f, -1.f, 0.f,
+  -1.f, 1.f, 0.f,
+  -1.f, -1.f, 0.f
+};
+
+static const float texCoordArr[] = {
+  1.f, 1.f,
+  1.f, 0.f,
+  0.f, 1.f,
+  0.f, 0.f
+};
+
+static const unsigned int eleArr[] = {
+  3, 0, 2,
+  3, 0, 1
+};
 
 // Helper functions for image load
 static unsigned int getint(FILE *fp) {
@@ -267,7 +287,7 @@ static void resizeMesh(std::vector<float>& posBuf) {
 }
 
 static void getMesh(const std::string &meshName) {
-  std::vector<tinyobj::shape_t> shapes;
+  /* std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> objMaterials;
 	std::string errStr;
 	bool rc = tinyobj::LoadObj(shapes, objMaterials, errStr, meshName.c_str());
@@ -278,7 +298,11 @@ static void getMesh(const std::string &meshName) {
 		posBuf = shapes[0].mesh.positions;
     texCoordBuf = shapes[0].mesh.texcoords;
 		eleBuf = shapes[0].mesh.indices;
-	}
+	} */
+
+  copy(&posArr[0], &posArr[12], back_inserter(posBuf));
+  copy(&texCoordArr[0], &texCoordArr[8], back_inserter(texCoordBuf));
+  copy(&eleArr[0], &eleArr[6], back_inserter(eleBuf));
 }
 
 static void sendMesh() {
@@ -290,7 +314,7 @@ static void sendMesh() {
 
   // Error if texture buffer is empty
   if(texCoordBuf.empty()) {
-    fprintf(stderr, "Could not find texture buffer.\n");
+    fprintf(stderr, "Could not find texture coordinate buffer.\n");
     exit(0);
   }
 
@@ -322,7 +346,8 @@ static void init() {
   glEnable(GL_BLEND);
 
   // Get mesh
-  getMesh("../resources/sphere.obj");
+  // getMesh("../resources/sphere.obj");
+  getMesh("../resources/cube.obj");
   resizeMesh(posBuf);
 
   // Send mesh to GPU
@@ -352,6 +377,7 @@ static void init() {
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   // Set filtering mode for magnification and minification
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
     GL_LINEAR_MIPMAP_LINEAR);
 
