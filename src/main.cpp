@@ -29,7 +29,7 @@ GLFWwindow *window; // Main application window
 
 // Location of camera
 float camLocation[] = {
-  0.f, 0.f, 1.f
+  0.f, 0.f, 5.f
 };
 
 std::vector<float> posBuf;
@@ -60,6 +60,9 @@ GLint texLoc;
 
 // Height of window ???
 int g_width, g_height;
+
+// TESTING
+float yRot = 0.f;
 
 static const float posArr[] = {
   1.f, 1.f, 0.f,
@@ -494,10 +497,14 @@ static void render() {
   matPlacement = glm::scale(glm::mat4(1.f),
     glm::vec3(1.f, 1.f, 1.f)) * 
     matPlacement;
+  // TESTING
+  matPlacement = glm::rotate(glm::mat4(1.f), yRot,
+    glm::vec3(0.f, 1.f, 0.f)) * matPlacement;
+  yRot = yRot + 0.01;
   matPlacement = glm::translate(glm::mat4(1.f), 
     glm::vec3(-camLocation[0], -camLocation[1], -camLocation[2])) *
     matPlacement;
-  camLocation[0] = camLocation[0] + 0.001;
+  // camLocation[0] = camLocation[0] + 0.001;
 
   // Bind shader program
   glUseProgram(pid);
@@ -571,6 +578,9 @@ int main(int argc, char **argv) {
   // Set callback(s) for window
   glfwSetKeyCallback(window, key_callback);
   glfwSetFramebufferSizeCallback(window, resize_callback);
+
+  // TESTING
+  glEnable(GL_CULL_FACE);
 
   // Initialize scene
   init();
