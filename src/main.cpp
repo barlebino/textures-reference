@@ -80,7 +80,7 @@ static const float texCoordArr[] = {
 
 static const unsigned int eleArr[] = {
   3, 0, 2,
-  3, 0, 1
+  3, 1, 0
 };
 
 // Helper functions for image load
@@ -92,7 +92,7 @@ static unsigned int getint(FILE *fp) {
   c1 = getc(fp);
   c2 = getc(fp);
   c3 = getc(fp);
-	
+
 	return ((unsigned int) c) + (((unsigned int) c1) << 8) +
 	(((unsigned int) c2) << 16) + (((unsigned int) c3) << 24);
 }
@@ -581,6 +581,8 @@ int main(int argc, char **argv) {
 
   // TESTING
   glEnable(GL_CULL_FACE);
+  glCullFace(GL_BACK);
+  glFrontFace(GL_CCW);
 
   // Initialize scene
   init();
