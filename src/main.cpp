@@ -29,7 +29,7 @@ GLFWwindow *window; // Main application window
 
 // Location of camera
 float camLocation[] = {
-  0.f, 0.f, 5.f
+  0.f, 0.f, 1.f
 };
 
 std::vector<float> posBuf;
@@ -381,8 +381,10 @@ static void init() {
   // Set filtering mode for magnification and minification
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+  //   GL_LINEAR_MIPMAP_LINEAR);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-    GL_LINEAR_MIPMAP_LINEAR);
+    GL_LINEAR_MIPMAP_NEAREST);
 
   // Unbind from texture buffer object from current texture unit
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -500,11 +502,11 @@ static void render() {
   // TESTING
   matPlacement = glm::rotate(glm::mat4(1.f), yRot,
     glm::vec3(0.f, 1.f, 0.f)) * matPlacement;
-  yRot = yRot + 0.01;
+  // yRot = yRot + 0.01;
   matPlacement = glm::translate(glm::mat4(1.f), 
     glm::vec3(-camLocation[0], -camLocation[1], -camLocation[2])) *
     matPlacement;
-  // camLocation[0] = camLocation[0] + 0.001;
+  camLocation[2] = camLocation[2] + 0.01;
 
   // Bind shader program
   glUseProgram(pid);
