@@ -381,10 +381,8 @@ static void init() {
   // Set filtering mode for magnification and minification
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-  //   GL_LINEAR_MIPMAP_LINEAR);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-    GL_LINEAR_MIPMAP_NEAREST);
+    GL_LINEAR_MIPMAP_LINEAR);
 
   // Unbind from texture buffer object from current texture unit
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -525,7 +523,7 @@ static void render() {
   glBindTexture(GL_TEXTURE_2D, texBufID);
   glUniform1i(texLoc, 0);
 
-  // Draw
+  // Draw one object
   glDrawElements(GL_TRIANGLES, (int) eleBuf.size(), GL_UNSIGNED_INT,
     (const void *) 0);
 
